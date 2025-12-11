@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir C:Userss1598.claude)",
+      "Bash(git ls-tree:*)",
+      "Bash(git show:*)",
+      "Bash(pnpm -v:*)",
+      "Bash(pnpm create:*)",
+      "Bash(pkill:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
