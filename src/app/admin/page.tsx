@@ -12,38 +12,56 @@ import { prisma } from "@/lib/db/client";
 export const dynamic = "force-dynamic";
 
 async function getStats() {
-  const [totalTenants, activeTenants, pendingTenants] = await Promise.all([
-    prisma.tenant.count(),
-    prisma.tenant.count({ where: { status: "ACTIVE" } }),
-    prisma.tenant.count({ where: { status: "PENDING" } }),
-  ]);
+  try {
+    const [totalTenants, activeTenants, pendingTenants] = await Promise.all([
+      prisma.tenant.count(),
+      prisma.tenant.count({ where: { status: "ACTIVE" } }),
+      prisma.tenant.count({ where: { status: "PENDING" } }),
+    ]);
 
-  return {
-    totalTenants,
-    activeTenants,
-    pendingTenants,
-    suspendedTenants: totalTenants - activeTenants - pendingTenants,
-  };
+    return {
+      totalTenants,
+      activeTenants,
+      pendingTenants,
+      suspendedTenants: totalTenants - activeTenants - pendingTenants,
+    };
+  } catch (error) {
+    console.error("データベース接続エラー:", error);
+    // データベース接続失敗時はデフォルト値を返す
+    return {
+      totalTenants: 0,
+      activeTenants: 0,
+      pendingTenants: 0,
+      suspendedTenants: 0,
+      error: error instanceof Error ? error.message : "データベースに接続できません",
+    };
+  }
 }
 
 async function getRecentTenants() {
-  return prisma.tenant.findMany({
-    where: { status: { not: "DELETED" } },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    select: {
-      id: true,
-      name: true,
-      subdomain: true,
-      status: true,
-      createdAt: true,
-    },
-  });
+  try {
+    return prisma.tenant.findMany({
+      where: { status: { not: "DELETED" } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        subdomain: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+  } catch (error) {
+    console.error("データベース接続エラー:", error);
+    return [];
+  }
 }
 
 export default async function AdminDashboardPage() {
   const stats = await getStats();
   const recentTenants = await getRecentTenants();
+  const hasError = "error" in stats;
 
   const statCards = [
     {
@@ -96,6 +114,33 @@ export default async function AdminDashboardPage() {
           新規テナント作成
         </Link>
       </div>
+
+      {/* データベース接続エラー表示 */}
+      {hasError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <Activity className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-amber-800">
+                データベース接続エラー
+              </h3>
+              <p className="mt-1 text-sm text-amber-700">
+                {stats.error || "データベースに接続できません。データベースサーバーが起動しているか確認してください。"}
+              </p>
+              <div className="mt-3 text-xs text-amber-600">
+                <p className="font-medium">対処方法:</p>
+                <ul className="mt-1 list-inside list-disc space-y-1">
+                  <li>Dockerを使用している場合: <code className="rounded bg-amber-100 px-1 py-0.5">docker-compose up -d</code></li>
+                  <li>環境変数<code className="rounded bg-amber-100 px-1 py-0.5">DATABASE_URL</code>が正しく設定されているか確認</li>
+                  <li>PostgreSQLサーバーが<code className="rounded bg-amber-100 px-1 py-0.5">localhost:5432</code>で起動しているか確認</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 統計カード */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
