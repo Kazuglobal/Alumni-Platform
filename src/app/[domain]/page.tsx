@@ -16,6 +16,10 @@ export default async function TenantHomePage({
   params: { domain: string };
 }) {
   const tenant = await getTenantBySubdomain(params.domain);
+  const tenantBasePath = `/${encodeURIComponent(params.domain)}`;
+  const tenantLoginPath = `${tenantBasePath}/login`;
+  const tenantNewsPath = `${tenantBasePath}/news`;
+  const tenantEventsPath = `${tenantBasePath}/events`;
 
   if (!tenant) {
     notFound();
@@ -97,7 +101,7 @@ export default async function TenantHomePage({
         {/* CTAボタン */}
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
-            href="/news"
+            href={tenantNewsPath}
             className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-base font-medium text-white shadow-lg transition-all hover:opacity-90"
             style={{ backgroundColor: "var(--template-primary)" }}
           >
@@ -105,7 +109,7 @@ export default async function TenantHomePage({
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            href="/events"
+            href={tenantEventsPath}
             className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-base font-medium transition-colors"
             style={{
               border: "1px solid var(--template-border)",
@@ -193,7 +197,7 @@ export default async function TenantHomePage({
         </p>
         <div className="mt-8">
           <Link
-            href="/login"
+            href={tenantLoginPath}
             className="inline-flex items-center gap-2 rounded-lg px-8 py-4 text-lg font-medium transition-all hover:opacity-90"
             style={{
               backgroundColor: "var(--template-bg-primary)",

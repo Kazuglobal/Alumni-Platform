@@ -11,7 +11,21 @@
       "Bash(npx prisma generate:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: implement multi-tenant alumni platform\n\n- Next.js 14 + TypeScript + Tailwind CSS setup\n- Prisma schema for Tenant and TenantAuditLog models\n- Subdomain-based routing middleware\n- Admin dashboard with tenant management (CRUD)\n- Tenant pages with dynamic routing\n- Landing page for platform introduction\n- Server Actions with Zod validation\n- React cache for tenant resolution\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git remote add:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm db:generate:*)",
+      "Bash(pnpm test:run:*)",
+      "Bash(SKIP_ENV_VALIDATION=true pnpm build:*)",
+      "Bash(if [ -f .env.local ])",
+      "Bash(then cat .env.local)",
+      "Bash(else echo \".env.local ファイルが存在しません\")",
+      "Bash(fi)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

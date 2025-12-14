@@ -34,8 +34,8 @@ export function TemplateSelector({
               key={template.id}
               type="button"
               onClick={() => onChange(template.id)}
-              onMouseEnter={() => setHoveredId(template.id)}
-              onMouseLeave={() => setHoveredId(null)}
+              onMouseEnter={() => !disabled && setHoveredId(template.id)}
+              onMouseLeave={() => !disabled && setHoveredId(null)}
               disabled={disabled}
               className={cn(
                 "relative rounded-lg border-2 overflow-hidden transition-all text-left",

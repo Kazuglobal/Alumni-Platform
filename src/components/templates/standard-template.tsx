@@ -3,23 +3,52 @@
 import { type ReactNode } from "react";
 import Link from "next/link";
 import { Calendar, Users, Bell, Mail, Home, Menu, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
+
+type NavTranslationKey = "home" | "news" | "events" | "members" | "contact";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+};
 
 type StandardTemplateProps = {
   tenantName: string;
   children: ReactNode;
+  navItems?: NavItem[];
+  translate?: (key: NavTranslationKey) => string;
 };
 
-const navItems = [
-  { href: "/", label: "ホーム", icon: Home },
-  { href: "/news", label: "ニュース", icon: Bell },
-  { href: "/events", label: "イベント", icon: Calendar },
-  { href: "/members", label: "会員", icon: Users },
-  { href: "/contact", label: "お問い合わせ", icon: Mail },
+const defaultNavConfig: Array<{
+  href: string;
+  key: NavTranslationKey;
+  fallback: string;
+  icon: LucideIcon;
+}> = [
+  { href: "/", key: "home", fallback: "ホーム", icon: Home },
+  { href: "/news", key: "news", fallback: "ニュース", icon: Bell },
+  { href: "/events", key: "events", fallback: "イベント", icon: Calendar },
+  { href: "/members", key: "members", fallback: "会員", icon: Users },
+  { href: "/contact", key: "contact", fallback: "お問い合わせ", icon: Mail },
 ];
 
-export function StandardTemplate({ tenantName, children }: StandardTemplateProps) {
+const buildDefaultNavItems = (translate?: (key: NavTranslationKey) => string): NavItem[] =>
+  defaultNavConfig.map(({ href, key, fallback, icon }) => ({
+    href,
+    icon,
+    label: translate?.(key) ?? fallback,
+  }));
+
+export function StandardTemplate({
+  tenantName,
+  children,
+  navItems,
+  translate,
+}: StandardTemplateProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const resolvedNavItems = navItems ?? buildDefaultNavItems(translate);
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--template-bg-primary)]">
@@ -51,7 +80,7 @@ export function StandardTemplate({ tenantName, children }: StandardTemplateProps
 
           {/* デスクトップナビゲーション */}
           <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => (
+            {resolvedNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -83,7 +112,7 @@ export function StandardTemplate({ tenantName, children }: StandardTemplateProps
               borderColor: "rgba(255,255,255,0.1)",
             }}
           >
-            {navItems.map((item) => {
+            {resolvedNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -93,7 +122,7 @@ export function StandardTemplate({ tenantName, children }: StandardTemplateProps
                   style={{ color: "var(--template-bg-primary)" }}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Icon size={18} />
+                  {Icon ? <Icon size={18} /> : null}
                   {item.label}
                 </Link>
               );
@@ -153,7 +182,7 @@ export function StandardTemplate({ tenantName, children }: StandardTemplateProps
                 リンク
               </h4>
               <ul className="space-y-2">
-                {navItems.map((item) => (
+                {resolvedNavItems.map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}

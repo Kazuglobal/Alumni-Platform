@@ -8,6 +8,8 @@ import { useState } from "react";
 type GalleryTemplateProps = {
   tenantName: string;
   children: ReactNode;
+  instagramUrl?: string;
+  shareUrl?: string;
 };
 
 const navItems = [
@@ -18,7 +20,12 @@ const navItems = [
   { href: "/share", label: "シェア", icon: Share2 },
 ];
 
-export function GalleryTemplate({ tenantName, children }: GalleryTemplateProps) {
+export function GalleryTemplate({
+  tenantName,
+  children,
+  instagramUrl,
+  shareUrl,
+}: GalleryTemplateProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -156,22 +163,44 @@ export function GalleryTemplate({ tenantName, children }: GalleryTemplateProps) 
 
             {/* ソーシャルリンク */}
             <div className="flex items-center gap-4">
-              <a
-                href="#"
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                style={{ color: "var(--template-text-secondary)" }}
-                aria-label="Instagram"
-              >
-                <Instagram size={20} />
-              </a>
-              <a
-                href="#"
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                style={{ color: "var(--template-text-secondary)" }}
-                aria-label="Share"
-              >
-                <Share2 size={20} />
-              </a>
+              {[
+                { url: instagramUrl, label: "Instagram", Icon: Instagram },
+                { url: shareUrl, label: "Share", Icon: Share2 },
+              ].map(({ url, label, Icon }) => {
+                const isActive = Boolean(url);
+                const commonProps = {
+                  className: "p-2 rounded-full hover:bg-gray-100 transition-colors",
+                  style: { color: "var(--template-text-secondary)" },
+                  "aria-label": label,
+                };
+
+                if (isActive) {
+                  return (
+                    <a
+                      key={label}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...commonProps}
+                    >
+                      <Icon size={20} />
+                    </a>
+                  );
+                }
+
+                return (
+                  <a
+                    key={label}
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    role="button"
+                    aria-disabled="true"
+                    {...commonProps}
+                  >
+                    <Icon size={20} />
+                  </a>
+                );
+              })}
             </div>
 
             {/* コピーライト */}
