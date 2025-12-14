@@ -46,6 +46,7 @@ export const getTenantBySubdomain = cache(async (subdomain: string) => {
       description: true,
       contactEmail: true,
       contactName: true,
+      templateId: true,
     },
   });
 
@@ -72,6 +73,7 @@ export const getTenantByCustomDomain = cache(async (domain: string) => {
       description: true,
       contactEmail: true,
       contactName: true,
+      templateId: true,
     },
   });
 

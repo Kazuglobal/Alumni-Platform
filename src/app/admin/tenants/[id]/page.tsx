@@ -8,10 +8,12 @@ import {
   Mail,
   User,
   Clock,
+  Palette,
 } from "lucide-react";
 import { prisma } from "@/lib/db/client";
 import { TenantEditForm } from "./tenant-edit-form";
 import { TenantActions } from "./tenant-actions";
+import { getTemplateById, DEFAULT_TEMPLATE_ID } from "@/lib/templates/definitions";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +112,27 @@ export default async function TenantDetailPage({
               テナント情報
             </h3>
             <div className="space-y-4">
+              {/* テンプレート */}
+              {(() => {
+                const template = getTemplateById(tenant.templateId ?? DEFAULT_TEMPLATE_ID);
+                return template ? (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Palette className="h-4 w-4 text-surface-400" />
+                    <div>
+                      <p className="text-surface-500">テンプレート</p>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: template.theme.primaryColor }}
+                        />
+                        <p className="font-medium text-surface-900">
+                          {template.name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="h-4 w-4 text-surface-400" />
                 <div>

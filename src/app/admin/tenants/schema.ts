@@ -67,6 +67,7 @@ export const updateTenantSchema = z.object({
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactName: z.string().max(100).optional().or(z.literal("")),
   settings: z.record(z.unknown()).optional(),
+  templateId: z.string().max(50).optional(),
 });
 
 export type UpdateTenantInput = z.infer<typeof updateTenantSchema>;

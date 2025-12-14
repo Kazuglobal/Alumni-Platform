@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import type { Provider } from "next-auth/providers";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import Line from "next-auth/providers/line";
@@ -7,7 +8,7 @@ import { prisma } from "@/lib/db/client";
 import { env } from "@/env";
 
 // Build providers array dynamically
-const providers = [
+const providers: Provider[] = [
   Google({
     clientId: env.GOOGLE_CLIENT_ID,
     clientSecret: env.GOOGLE_CLIENT_SECRET,

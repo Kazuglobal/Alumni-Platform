@@ -3,12 +3,17 @@
 import { useState } from "react";
 import { Loader2, CheckCircle } from "lucide-react";
 import { updateTenant } from "../actions";
+import { TemplateSelector } from "@/components/templates";
+import { DEFAULT_TEMPLATE_ID } from "@/lib/templates/definitions";
 import type { Tenant } from "@prisma/client";
 
 export function TenantEditForm({ tenant }: { tenant: Tenant }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [success, setSuccess] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(
+    tenant.templateId ?? DEFAULT_TEMPLATE_ID
+  );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -23,6 +28,7 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
       description: formData.get("description") as string,
       contactEmail: formData.get("contactEmail") as string,
       contactName: formData.get("contactName") as string,
+      templateId: selectedTemplate,
     };
 
     const result = await updateTenant(data);
@@ -112,6 +118,21 @@ export function TenantEditForm({ tenant }: { tenant: Tenant }) {
             />
           </div>
         </div>
+      </div>
+
+      {/* テンプレート選択 */}
+      <div className="rounded-xl border border-surface-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 font-display text-lg font-semibold text-surface-900">
+          テンプレート
+        </h3>
+        <p className="mb-4 text-sm text-surface-500">
+          同窓会サイトのデザインテンプレートを変更できます
+        </p>
+        <TemplateSelector
+          value={selectedTemplate}
+          onChange={setSelectedTemplate}
+          disabled={isSubmitting}
+        />
       </div>
 
       {/* 連絡先 */}

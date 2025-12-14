@@ -98,7 +98,7 @@ export async function updateTenant(input: UpdateTenantInput) {
     return { success: false, error: parsed.error.flatten() };
   }
 
-  const { id, settings, ...data } = parsed.data;
+  const { id, settings, templateId, ...data } = parsed.data;
 
   const tenant = await prisma.tenant.findUnique({ where: { id } });
   if (!tenant) {
@@ -111,6 +111,7 @@ export async function updateTenant(input: UpdateTenantInput) {
     contactEmail?: string | null;
     contactName?: string | null;
     settings?: object;
+    templateId?: string | null;
   } = {
     ...(data.name && { name: data.name }),
     description: data.description || null,
@@ -122,12 +123,16 @@ export async function updateTenant(input: UpdateTenantInput) {
     updateData.settings = settings as object;
   }
 
+  if (templateId !== undefined) {
+    updateData.templateId = templateId || null;
+  }
+
   const updated = await prisma.tenant.update({
     where: { id },
     data: updateData,
   });
 
-  await logAudit(id, "updated", "admin", { ...data, settings });
+  await logAudit(id, "updated", "admin", { ...data, settings, templateId });
 
   revalidatePath("/admin/tenants");
   revalidatePath(`/admin/tenants/${id}`);

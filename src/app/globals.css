@@ -24,6 +24,24 @@
     --input: 20 6% 90%;
     --ring: 24 75% 53%;
     --radius: 0.5rem;
+
+    /* テンプレートシステム用CSS変数（デフォルト値） */
+    --template-primary: #1a365d;
+    --template-primary-hover: #2c4a7c;
+    --template-secondary: #718096;
+    --template-accent: #ed8936;
+    --template-text-primary: #1a202c;
+    --template-text-secondary: #4a5568;
+    --template-text-muted: #a0aec0;
+    --template-bg-primary: #ffffff;
+    --template-bg-secondary: #f7fafc;
+    --template-bg-accent: #edf2f7;
+    --template-border: #e2e8f0;
+    --template-font-heading: "Noto Sans JP", sans-serif;
+    --template-font-body: "Noto Sans JP", sans-serif;
+    --template-header-height: 64px;
+    --template-footer-height: 200px;
+    --template-container-max: 1200px;
   }
 
   * {
