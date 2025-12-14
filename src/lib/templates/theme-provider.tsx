@@ -53,7 +53,7 @@ export function useTemplate(): TemplateContextValue {
   return context;
 }
 
-// テンプレートのテーマに応じたスタイルを取得するフック
+// Hook to get styles according to the template theme
 export function useTemplateStyles() {
   const { theme } = useTemplate();
 
