@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir C:\\Users\\s1598\\.claude)",
+      "Bash(dir %USERPROFILE%\\.claude)",
       "Bash(git ls-tree:*)",
       "Bash(git show:*)",
       "Bash(pnpm -v:*)",
@@ -19,7 +19,12 @@
       "Bash(git push:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm db:generate:*)",
-      "Bash(pnpm test:run:*)"
+      "Bash(pnpm test:run:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout /t 3)",
+      "Bash(SKIP_ENV_VALIDATION=true pnpm build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

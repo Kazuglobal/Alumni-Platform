@@ -13,6 +13,11 @@ vi.mock("@/auth", () => ({
   auth: vi.fn(),
 }));
 
+// Helper to mock auth return value with proper typing
+const mockAuthReturn = (value: unknown) => {
+  return value as ReturnType<typeof import("@/auth").auth>;
+};
+
 describe("getCurrentUser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -20,7 +25,7 @@ describe("getCurrentUser", () => {
 
   it("should return null when not authenticated", async () => {
     const { auth } = await import("@/auth");
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(null));
 
     const user = await getCurrentUser();
     expect(user).toBeNull();
@@ -35,7 +40,7 @@ describe("getCurrentUser", () => {
         email: "test@example.com",
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     const user = await getCurrentUser();
     expect(user).toEqual(mockSession.user);
@@ -49,7 +54,7 @@ describe("requireAuth", () => {
 
   it("should throw error when not authenticated", async () => {
     const { auth } = await import("@/auth");
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(null));
 
     await expect(requireAuth()).rejects.toThrow("認証が必要です");
   });
@@ -63,7 +68,7 @@ describe("requireAuth", () => {
         email: "test@example.com",
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     const session = await requireAuth();
     expect(session).toEqual(mockSession);
@@ -83,7 +88,7 @@ describe("requireTenantMembership", () => {
         memberships: [{ tenantId: "other-tenant", role: TenantRole.MEMBER }],
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     await expect(requireTenantMembership("target-tenant")).rejects.toThrow(
       "このテナントへのアクセス権がありません"
@@ -99,7 +104,7 @@ describe("requireTenantMembership", () => {
         memberships: [membership],
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     const result = await requireTenantMembership("target-tenant");
     expect(result.membership).toEqual(membership);
@@ -119,7 +124,7 @@ describe("requireTenantRole", () => {
         memberships: [{ tenantId: "tenant-1", role: TenantRole.MEMBER }],
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     await expect(
       requireTenantRole("tenant-1", TenantRole.ADMIN)
@@ -134,7 +139,7 @@ describe("requireTenantRole", () => {
         memberships: [{ tenantId: "tenant-1", role: TenantRole.ADMIN }],
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     await expect(
       requireTenantRole("tenant-1", TenantRole.ADMIN)
@@ -149,7 +154,7 @@ describe("requireTenantRole", () => {
         memberships: [{ tenantId: "tenant-1", role: TenantRole.ADMIN }],
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     // ADMIN should be able to do EDITOR tasks
     await expect(
@@ -171,7 +176,7 @@ describe("requirePlatformAdmin", () => {
         platformAdmin: null,
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     await expect(requirePlatformAdmin()).rejects.toThrow(
       "プラットフォーム管理者権限が必要です"
@@ -186,7 +191,7 @@ describe("requirePlatformAdmin", () => {
         platformAdmin: { id: "pa-1", level: 1 },
       },
     };
-    vi.mocked(auth).mockResolvedValue(mockSession);
+    vi.mocked(auth).mockResolvedValue(mockAuthReturn(mockSession));
 
     const session = await requirePlatformAdmin();
     expect(session.user.platformAdmin).toBeDefined();

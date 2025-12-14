@@ -41,6 +41,10 @@ model Tenant {
   // リレーション
   auditLogs       TenantAuditLog[]
   memberships     TenantMembership[]
+  posts           Post[]
+  categories      Category[]
+  tags            Tag[]
+  media           Media[]
 
   @@index([subdomain])
   @@index([customDomain])
@@ -186,4 +190,124 @@ model PlatformAdmin {
   createdBy String?
 
   @@map("platform_admins")
+}
+
+// ====================
+// CMS: 記事
+// ====================
+model Post {
+  id          String         @id @default(cuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // コンテンツ
+  title       String         @db.VarChar(200)
+  slug        String         @db.VarChar(100)
+  content     String         @db.Text
+  excerpt     String?        @db.VarChar(300)
+  coverImage  String?        @db.VarChar(500)
+
+  // ステータス
+  status      PostStatus     @default(DRAFT)
+  visibility  PostVisibility @default(PUBLIC)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  // 作成者
+  authorId    String
+
+  // カテゴリ・タグ
+  categoryId  String?
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  tags        PostTag[]
+
+  // メタデータ
+  viewCount   Int            @default(0)
+
+  // 監査
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status, publishedAt])
+  @@map("posts")
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostVisibility {
+  PUBLIC
+  MEMBERS
+  PRIVATE
+}
+
+// ====================
+// CMS: カテゴリ
+// ====================
+model Category {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String   @db.VarChar(50)
+  slug        String   @db.VarChar(50)
+  description String?  @db.VarChar(200)
+  posts       Post[]
+
+  @@unique([tenantId, slug])
+  @@map("categories")
+}
+
+// ====================
+// CMS: タグ
+// ====================
+model Tag {
+  id       String    @id @default(cuid())
+  tenantId String
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name     String    @db.VarChar(50)
+  slug     String    @db.VarChar(50)
+  posts    PostTag[]
+
+  @@unique([tenantId, slug])
+  @@map("tags")
+}
+
+// ====================
+// CMS: 記事タグ中間テーブル
+// ====================
+model PostTag {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+// ====================
+// CMS: メディア
+// ====================
+model Media {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  filename  String   @db.VarChar(255)
+  url       String   @db.VarChar(500)
+  mimeType  String   @db.VarChar(100)
+  size      Int
+  width     Int?
+  height    Int?
+
+  createdAt DateTime @default(now())
+  createdBy String
+
+  @@index([tenantId, createdAt])
+  @@map("media")
 }
