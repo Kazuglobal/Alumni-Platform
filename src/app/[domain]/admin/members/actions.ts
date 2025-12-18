@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db/client";
 
 // Schema for updating member role
@@ -44,6 +45,25 @@ export async function updateMemberRole(
   tenantId: string,
   input: z.infer<typeof updateMemberRoleSchema>
 ) {
+  // Authorization check: only authenticated tenant admins can manage members
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is a tenant admin
+  const adminMembership = await prisma.tenantMembership.findFirst({
+    where: {
+      tenantId,
+      userId: session.user.id,
+      role: "ADMIN",
+    },
+  });
+
+  if (!adminMembership) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   const parsed = updateMemberRoleSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.flatten() };
@@ -51,36 +71,51 @@ export async function updateMemberRole(
 
   const { membershipId, role } = parsed.data;
 
-  // Verify membership belongs to tenant
-  const membership = await prisma.tenantMembership.findFirst({
-    where: { id: membershipId, tenantId },
-  });
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const membership = await tx.tenantMembership.findFirst({
+        where: { id: membershipId, tenantId },
+      });
 
-  if (!membership) {
-    return { success: false, error: "メンバーが見つかりません" };
-  }
+      if (!membership) {
+        throw new Error("MEMBERSHIP_NOT_FOUND");
+      }
 
-  // Check if this is the last admin
-  if (membership.role === "ADMIN" && role !== "ADMIN") {
-    const adminCount = await prisma.tenantMembership.count({
-      where: { tenantId, role: "ADMIN" },
+      // Check if this is the last admin inside the same transaction
+      if (membership.role === "ADMIN" && role !== "ADMIN") {
+        const adminCount = await tx.tenantMembership.count({
+          where: { tenantId, role: "ADMIN" },
+        });
+
+        if (adminCount <= 1) {
+          throw new Error("LAST_ADMIN");
+        }
+      }
+
+      await tx.tenantMembership.update({
+        where: { id: membershipId },
+        data: { role },
+      });
+
+      return { success: true as const };
     });
 
-    if (adminCount <= 1) {
-      return {
-        success: false,
-        error: "最後の管理者の権限を変更することはできません",
-      };
+    revalidatePath("/admin/members");
+    return result;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "MEMBERSHIP_NOT_FOUND") {
+        return { success: false, error: "メンバーが見つかりません" };
+      }
+      if (error.message === "LAST_ADMIN") {
+        return {
+          success: false,
+          error: "最後の管理者の権限を変更することはできません",
+        };
+      }
     }
+    throw error;
   }
-
-  await prisma.tenantMembership.update({
-    where: { id: membershipId },
-    data: { role },
-  });
-
-  revalidatePath("/admin/members");
-  return { success: true };
 }
 
 // Update member details
@@ -88,6 +123,25 @@ export async function updateMember(
   tenantId: string,
   input: z.infer<typeof updateMemberSchema>
 ) {
+  // Authorization check: only authenticated tenant admins can manage members
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is a tenant admin
+  const adminMembership = await prisma.tenantMembership.findFirst({
+    where: {
+      tenantId,
+      userId: session.user.id,
+      role: "ADMIN",
+    },
+  });
+
+  if (!adminMembership) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   const parsed = updateMemberSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.flatten() };
@@ -105,7 +159,7 @@ export async function updateMember(
   }
 
   await prisma.tenantMembership.update({
-    where: { id: membershipId },
+    where: { id: membershipId, tenantId },
     data: {
       displayName: displayName || null,
       graduationYear,
@@ -118,9 +172,31 @@ export async function updateMember(
 
 // Remove member from tenant
 export async function removeMember(tenantId: string, membershipId: string) {
+  // Authorization check: only authenticated tenant admins can manage members
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is a tenant admin
+  const adminMembership = await prisma.tenantMembership.findFirst({
+    where: {
+      tenantId,
+      userId: session.user.id,
+      role: "ADMIN",
+    },
+  });
+
+  if (!adminMembership) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // tenantId はセッション経由で検証済みのものを使用する
+  const validatedTenantId = adminMembership.tenantId;
+
   // Verify membership belongs to tenant
   const membership = await prisma.tenantMembership.findFirst({
-    where: { id: membershipId, tenantId },
+    where: { id: membershipId, tenantId: validatedTenantId },
   });
 
   if (!membership) {
@@ -130,7 +206,7 @@ export async function removeMember(tenantId: string, membershipId: string) {
   // Check if this is the last admin
   if (membership.role === "ADMIN") {
     const adminCount = await prisma.tenantMembership.count({
-      where: { tenantId, role: "ADMIN" },
+      where: { tenantId: validatedTenantId, role: "ADMIN" },
     });
 
     if (adminCount <= 1) {
@@ -142,7 +218,7 @@ export async function removeMember(tenantId: string, membershipId: string) {
   }
 
   await prisma.tenantMembership.delete({
-    where: { id: membershipId },
+    where: { id: membershipId, tenantId: validatedTenantId },
   });
 
   revalidatePath("/admin/members");

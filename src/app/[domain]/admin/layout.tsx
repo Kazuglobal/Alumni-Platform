@@ -1,15 +1,21 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { FileText, Settings, Users, Home, LogOut } from "lucide-react";
+import { FileText, Settings, Users, Home, LogOut, CreditCard } from "lucide-react";
 import { getTenantBySubdomain } from "@/lib/tenant/resolve";
 import { auth, signOut } from "@/auth";
 
-const navItems = [
-  { href: "/admin", label: "ダッシュボード", icon: Home },
-  { href: "/admin/posts", label: "記事管理", icon: FileText },
-  { href: "/admin/members", label: "会員管理", icon: Users },
-  { href: "/admin/settings", label: "設定", icon: Settings },
-];
+const buildNavItems = (domain?: string) => {
+  const safeDomain = domain ? encodeURIComponent(domain) : "unknown-domain";
+  const basePath = `/${safeDomain}/admin`;
+
+  return [
+    { href: basePath, label: "ダッシュボード", icon: Home },
+    { href: `${basePath}/posts`, label: "記事管理", icon: FileText },
+    { href: `${basePath}/members`, label: "会員管理", icon: Users },
+    { href: `${basePath}/payments`, label: "支払い管理", icon: CreditCard },
+    { href: `${basePath}/settings`, label: "設定", icon: Settings },
+  ];
+};
 
 export default async function TenantAdminLayout({
   children,
@@ -30,13 +36,15 @@ export default async function TenantAdminLayout({
     redirect("/login");
   }
 
+  const navItems = buildNavItems(params?.domain);
+
   return (
     <div className="min-h-screen bg-surface-50">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-surface-200 bg-white">
         {/* Logo */}
         <div className="flex h-16 items-center border-b border-surface-200 px-6">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={`/${params.domain}`} className="flex items-center gap-2">
             <span className="text-lg font-bold text-surface-900">
               {tenant.name}
             </span>

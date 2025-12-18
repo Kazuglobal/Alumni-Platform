@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Eye } from "lucide-react";
 import { prisma } from "@/lib/db/client";
 import { getTenantBySubdomain } from "@/lib/tenant/resolve";
 import { ShareButton } from "@/components/share-button";
+import { sanitizePostContent } from "@/lib/posts/sanitize";
 
 export const revalidate = 60;
 
@@ -92,6 +93,9 @@ export default async function PostDetailPage({
     notFound();
   }
 
+  // レガシーな未サニタイズデータ対策として表示前に再サニタイズ
+  const sanitizedContent = sanitizePostContent(post.content);
+
   const relatedPosts = await getRelatedPosts(tenant.id, post.id, post.categoryId);
 
   return (
@@ -171,7 +175,7 @@ export default async function PostDetailPage({
           "--tw-prose-headings": "var(--template-text-primary)",
           "--tw-prose-links": "var(--template-primary)",
         } as React.CSSProperties}
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
 
       {/* Share */}

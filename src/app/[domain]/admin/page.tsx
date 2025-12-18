@@ -1,6 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, Users, Calendar, TrendingUp, ArrowRight } from "lucide-react";
+import { auth } from "@/auth";
+import { TenantRole, hasRoleOrHigher, isPlatformAdmin } from "@/lib/auth/permissions";
+import type { AuthUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/client";
 import { getTenantBySubdomain } from "@/lib/tenant/resolve";
 
@@ -32,9 +35,28 @@ export default async function TenantAdminDashboard({
 }: {
   params: { domain: string };
 }) {
+  const domain = params.domain;
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const currentUser = session.user as AuthUser;
   const tenant = await getTenantBySubdomain(params.domain);
 
   if (!tenant) {
+    notFound();
+  }
+
+  const membership = currentUser.memberships?.find(
+    (m) => m.tenantId === tenant.id
+  );
+  const isAdminOrHigher =
+    isPlatformAdmin(currentUser) ||
+    (membership ? hasRoleOrHigher(membership.role, TenantRole.ADMIN) : false);
+
+  if (!isAdminOrHigher) {
     notFound();
   }
 
@@ -54,6 +76,7 @@ export default async function TenantAdminDashboard({
 
       {/* Stats */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* TODO: replace hardcoded count with real events count */}
         <div className="rounded-xl border border-surface-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="rounded-lg bg-brand-100 p-3">
@@ -114,7 +137,7 @@ export default async function TenantAdminDashboard({
         <div className="flex items-center justify-between border-b border-surface-200 px-6 py-4">
           <h2 className="font-semibold text-surface-900">最近の記事</h2>
           <Link
-            href="/admin/posts"
+            href={`/${domain}/admin/posts`}
             className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
           >
             すべて見る
@@ -127,7 +150,7 @@ export default async function TenantAdminDashboard({
             <FileText className="h-10 w-10 text-surface-300" />
             <p className="mt-3 text-surface-500">まだ記事がありません</p>
             <Link
-              href="/admin/posts/new"
+              href={`/${domain}/admin/posts/new`}
               className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
             >
               最初の記事を作成
@@ -138,7 +161,7 @@ export default async function TenantAdminDashboard({
             {stats.recentPosts.map((post) => (
               <Link
                 key={post.id}
-                href={`/admin/posts/${post.id}`}
+                href={`/${domain}/admin/posts/${post.id}`}
                 className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-surface-50"
               >
                 <div>
@@ -175,7 +198,7 @@ export default async function TenantAdminDashboard({
       {/* Quick actions */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link
-          href="/admin/posts/new"
+          href={`/${domain}/admin/posts/new`}
           className="flex items-center gap-4 rounded-xl border border-surface-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
         >
           <div className="rounded-lg bg-brand-100 p-3">
@@ -188,7 +211,7 @@ export default async function TenantAdminDashboard({
         </Link>
 
         <Link
-          href="/admin/members"
+          href={`/${domain}/admin/members`}
           className="flex items-center gap-4 rounded-xl border border-surface-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
         >
           <div className="rounded-lg bg-blue-100 p-3">
@@ -201,7 +224,7 @@ export default async function TenantAdminDashboard({
         </Link>
 
         <Link
-          href="/admin/settings"
+          href={`/${domain}/admin/settings`}
           className="flex items-center gap-4 rounded-xl border border-surface-200 bg-white p-6 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
         >
           <div className="rounded-lg bg-surface-100 p-3">

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/client";
 import { sanitizePostContent, generateExcerpt } from "@/lib/posts/sanitize";
 import {
@@ -215,20 +216,6 @@ export async function createCategory(tenantId: string, input: CreateCategoryInpu
 
   const { name, slug, description } = parsed.data;
 
-  // Check slug uniqueness
-  const existing = await prisma.category.findUnique({
-    where: { tenantId_slug: { tenantId, slug } },
-  });
-
-  if (existing) {
-    return {
-      success: false,
-      error: {
-        fieldErrors: { slug: ["このスラッグは既に使用されています"] },
-      },
-    };
-  }
-
   try {
     const category = await prisma.category.create({
       data: {
@@ -243,6 +230,20 @@ export async function createCategory(tenantId: string, input: CreateCategoryInpu
 
     return { success: true, data: category };
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002" &&
+      Array.isArray(error.meta?.target) &&
+      error.meta.target.includes("tenantId_slug")
+    ) {
+      return {
+        success: false,
+        error: {
+          fieldErrors: { slug: ["このスラッグは既に使用されています"] },
+        },
+      };
+    }
+
     console.error("Failed to create category:", error);
     return {
       success: false,

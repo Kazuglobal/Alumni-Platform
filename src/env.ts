@@ -18,10 +18,16 @@ export const env = createEnv({
     // LINE (optional)
     LINE_CLIENT_ID: z.string().optional(),
     LINE_CLIENT_SECRET: z.string().optional(),
+    // Vercel Blob (optional - for image uploads)
+    BLOB_READ_WRITE_TOKEN: z.string().optional(),
+    // Stripe
+    STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
     NEXT_PUBLIC_ROOT_DOMAIN: z.string().min(1),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().startsWith("pk_").optional(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -38,6 +44,12 @@ export const env = createEnv({
     EMAIL_FROM: process.env.EMAIL_FROM,
     LINE_CLIENT_ID: process.env.LINE_CLIENT_ID,
     LINE_CLIENT_SECRET: process.env.LINE_CLIENT_SECRET,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    // Stripe
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
   skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });

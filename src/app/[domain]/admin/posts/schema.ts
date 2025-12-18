@@ -30,8 +30,14 @@ export const createPostSchema = z.object({
     .or(z.literal("")),
   status: z.enum(["DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
   visibility: z.enum(["PUBLIC", "MEMBERS", "PRIVATE"]).default("PUBLIC"),
-  scheduledAt: z.string().datetime().optional().or(z.literal("")),
-  categoryId: z.string().cuid().optional().or(z.literal("")),
+  scheduledAt: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().datetime().optional()
+  ),
+  categoryId: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().cuid().optional()
+  ),
 });
 
 export type CreatePostInput = z.infer<typeof createPostSchema>;

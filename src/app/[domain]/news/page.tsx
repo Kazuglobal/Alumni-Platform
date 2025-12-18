@@ -74,7 +74,7 @@ export default async function NewsListPage({
           {posts.map((post) => (
             <Link
               key={post.id}
-              href={`/news/${post.slug}`}
+              href={`/${encodeURIComponent(params.domain)}/news/${post.slug}`}
               className="group overflow-hidden rounded-xl transition-all hover:shadow-lg"
               style={{
                 backgroundColor: "var(--template-bg-primary)",

@@ -35,12 +35,20 @@ export function sanitizePostContent(html: string): string {
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedSchemes: ALLOWED_URL_SCHEMES,
     allowedSchemesByTag: {
-      img: ["https", "http"], // Allow http for localhost development
+      img: process.env.NODE_ENV === "development" ? ["https", "http"] : ["https"],
     },
     transformTags: {
       a: (tagName, attribs) => {
-        // Add rel attribute to external links
-        if (attribs.href && !attribs.href.startsWith("/")) {
+        const href = attribs.href?.trim();
+        const hrefLower = href?.toLowerCase();
+        const isExternal =
+          !!hrefLower &&
+          (hrefLower.startsWith("http://") ||
+            hrefLower.startsWith("https://") ||
+            hrefLower.startsWith("//"));
+
+        // Add rel/target only for absolute external URLs
+        if (isExternal) {
           return {
             tagName,
             attribs: {

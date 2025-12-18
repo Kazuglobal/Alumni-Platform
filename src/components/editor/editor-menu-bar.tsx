@@ -18,12 +18,16 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Unlink,
+  Upload,
+  Loader2,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 
 type EditorMenuBarProps = {
   editor: Editor;
   disabled?: boolean;
+  tenantId?: string;
+  onImageUpload?: (file: File) => Promise<string | null>;
 };
 
 type MenuButtonProps = {
@@ -62,11 +66,44 @@ function MenuDivider() {
   return <div className="mx-1 h-6 w-px bg-surface-200" />;
 }
 
-export function EditorMenuBar({ editor, disabled }: EditorMenuBarProps) {
+export function EditorMenuBar({ editor, disabled, tenantId, onImageUpload }: EditorMenuBarProps) {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [showImageInput, setShowImageInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!onImageUpload) return;
+
+      setIsUploading(true);
+      try {
+        const url = await onImageUpload(file);
+        if (url) {
+          editor.chain().focus().setImage({ src: url }).run();
+        }
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [editor, onImageUpload]
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [handleFileUpload]
+  );
 
   const setLink = useCallback(() => {
     if (!linkUrl) {
@@ -83,12 +120,28 @@ export function EditorMenuBar({ editor, disabled }: EditorMenuBarProps) {
   }, [editor, linkUrl]);
 
   const addImage = useCallback(() => {
-    if (!imageUrl) {
+    const trimmedUrl = imageUrl.trim();
+    if (!trimmedUrl) {
       setShowImageInput(false);
       return;
     }
 
-    editor.chain().focus().setImage({ src: imageUrl }).run();
+    const isRootRelative = trimmedUrl.startsWith("/") && !trimmedUrl.startsWith("//");
+    let isSafe = isRootRelative;
+
+    if (!isSafe) {
+      try {
+        const resolved = new URL(trimmedUrl, window.location.origin);
+        isSafe = resolved.protocol === "http:" || resolved.protocol === "https:";
+      } catch {
+        isSafe = false;
+      }
+    }
+
+    if (isSafe) {
+      editor.chain().focus().setImage({ src: trimmedUrl }).run();
+    }
+
     setImageUrl("");
     setShowImageInput(false);
   }, [editor, imageUrl]);
@@ -293,13 +346,37 @@ export function EditorMenuBar({ editor, disabled }: EditorMenuBarProps) {
           </button>
         </div>
       ) : (
-        <MenuButton
-          onClick={() => setShowImageInput(true)}
-          disabled={disabled}
-          title="画像"
-        >
-          <ImageIcon size={16} />
-        </MenuButton>
+        <>
+          <MenuButton
+            onClick={() => setShowImageInput(true)}
+            disabled={disabled}
+            title="画像URL"
+          >
+            <ImageIcon size={16} />
+          </MenuButton>
+          {onImageUpload && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <MenuButton
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled || isUploading}
+                title="画像アップロード"
+              >
+                {isUploading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Upload size={16} />
+                )}
+              </MenuButton>
+            </>
+          )}
+        </>
       )}
 
       <div className="flex-1" />

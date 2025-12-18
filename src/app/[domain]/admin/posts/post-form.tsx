@@ -213,6 +213,7 @@ export function PostForm({ tenantId, authorId, categories, post }: PostFormProps
             onChange={setContent}
             placeholder="記事の本文を入力してください..."
             disabled={isSubmitting}
+            tenantId={tenantId}
           />
           {errors.content && (
             <p className="mt-2 text-sm text-red-600">{errors.content[0]}</p>
@@ -382,6 +383,18 @@ export function PostForm({ tenantId, authorId, categories, post }: PostFormProps
           </Link>
 
           <div className="flex items-center gap-3">
+            {/* Preview (only for existing posts) */}
+            {isEditing && post && (
+              <Link
+                href={`/admin/posts/${post.id}/preview`}
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-lg border border-surface-200 bg-white px-4 py-2.5 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-50"
+              >
+                <Eye className="h-4 w-4" />
+                プレビュー
+              </Link>
+            )}
+
             {/* Save as draft */}
             <button
               type="button"

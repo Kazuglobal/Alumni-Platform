@@ -45,6 +45,8 @@ model Tenant {
   categories      Category[]
   tags            Tag[]
   media           Media[]
+  payments        Payment[]
+  paymentSettings PaymentSettings?
 
   @@index([subdomain])
   @@index([customDomain])
@@ -310,4 +312,94 @@ model Media {
 
   @@index([tenantId, createdAt])
   @@map("media")
+}
+
+// ====================
+// 決済: 支払い
+// ====================
+model Payment {
+  id                    String        @id @default(cuid())
+  tenantId              String
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Stripe情報（参照IDのみ保存、詳細はStripe側）
+  stripeSessionId       String        @unique
+  stripePaymentIntentId String?       @unique
+  stripeCustomerId      String?
+
+  // 支払い情報
+  type                  PaymentType
+  amount                Int           // 金額（円）
+  currency              String        @default("jpy")
+  status                PaymentStatus @default(PENDING)
+
+  // 支払者情報（Stripeから取得、匿名の場合はnull）
+  payerEmail            String?       @db.VarChar(255)
+  payerName             String?       @db.VarChar(100)
+  isAnonymous           Boolean       @default(false)
+
+  // メタデータ
+  description           String?       @db.VarChar(500)
+  metadata              Json          @default("{}")
+
+  // 関連（イベント参加費の場合）
+  eventId               String?
+
+  // タイムスタンプ
+  completedAt           DateTime?
+  refundedAt            DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, type, createdAt])
+  @@index([stripeCustomerId])
+  @@map("payments")
+}
+
+enum PaymentType {
+  ANNUAL_FEE  // 年会費
+  DONATION    // 寄付
+  EVENT_FEE   // イベント参加費
+  OTHER       // その他
+}
+
+enum PaymentStatus {
+  PENDING            // セッション作成済み、未完了
+  PROCESSING         // 処理中
+  COMPLETED          // 支払い完了
+  FAILED             // 失敗
+  REFUNDED           // 返金済み
+  PARTIALLY_REFUNDED // 一部返金
+  EXPIRED            // セッション期限切れ
+  CANCELED           // キャンセル
+}
+
+// ====================
+// 決済: テナント設定
+// ====================
+model PaymentSettings {
+  id                   String   @id @default(cuid())
+  tenantId             String   @unique
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // 年会費設定
+  annualFeeEnabled     Boolean  @default(false)
+  annualFeeAmount      Int      @default(5000)
+  annualFeeDescription String?  @db.VarChar(500)
+
+  // 寄付設定
+  donationEnabled      Boolean  @default(false)
+  donationMinAmount    Int      @default(1000)
+  donationMaxAmount    Int      @default(1000000)
+  donationPresets      Json     @default("[1000, 3000, 5000, 10000]")
+
+  // 表示設定
+  showDonorList        Boolean  @default(true)
+  allowAnonymous       Boolean  @default(true)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("payment_settings")
 }
